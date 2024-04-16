@@ -26,3 +26,7 @@
 .main-container {
   padding-top: 164px; /* Height of the header */
 }
+
+video::-webkit-media-controls {
+  display: none;
+}

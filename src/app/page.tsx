@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function LandingPage() {
   const [video, setVideo] = useState(null);
+  const videoRef = useRef(null);
   const [sentence, setSentence] = useState("");
   const [guess, setGuess] = useState("");
   const [isCorrect, setIsCorrect] = useState(null); // null, true (correct), or false (incorrect)
@@ -12,17 +13,20 @@ export default function LandingPage() {
   };
 
   const fetchVideo = () => {
-    fetch("http://localhost:5000/api/random-video")
+    const currentVideoId = video ? video._id : "";
+    const url = currentVideoId
+      ? `http://localhost:5000/api/random-video?currentVideoId=${currentVideoId}`
+      : `http://localhost:5000/api/random-video`;
+    fetch(url)
       .then((response) => response.json())
       .then((data) => {
         setVideo(data);
         setSentence(data.sentence);
-        setIsCorrect(null); // Reset the correctness state to allow for new submissions
-        setGuess(""); // Clear the guess input for a new start
+        setIsCorrect(null);
+        setGuess("");
       })
       .catch((err) => {
         console.error("Error fetching random video:", err);
-        setVideo(null);
       });
   };
 
@@ -50,6 +54,15 @@ export default function LandingPage() {
     }
   };
 
+  const handleVideoClick = () => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return; // Early exit if video element is not available
+
+    if (videoElement.paused || videoElement.ended) {
+      videoElement.play();
+    } 
+  };
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     fetchVideo();
@@ -59,11 +72,13 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <main className="mt-8">
+    <main>
       <div className="aspect-w-16 aspect-h-9 w-3/4 max-w-s mx-auto">
         {video ? (
           <video
-            controls
+            autoplay="autoplay"
+            ref={videoRef}
+            onClick={handleVideoClick}
             className="w-full h-full object-contain mx-auto bg-black rounded"
             src={video.url}
           >
@@ -85,14 +100,22 @@ export default function LandingPage() {
           />
           <button
             type="submit"
-            className={`px-6 py-2 text-lg font-semibold rounded-lg ${isCorrect === null ? "bg-blue-500 text-white" : isCorrect ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+            className={`px-6 py-2 text-lg font-semibold rounded-lg ${
+              isCorrect === null
+                ? "bg-blue-500 text-white"
+                : isCorrect
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
           >
-            {isCorrect === null ? "Submit" : isCorrect === true ? "正解！" : "不正解！"}
+            {isCorrect === null
+              ? "Submit"
+              : isCorrect === true
+              ? "正解！"
+              : "不正解！"}
           </button>
         </form>
       </div>
     </main>
   );
 }
-
-
